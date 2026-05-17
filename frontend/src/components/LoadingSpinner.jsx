@@ -31,9 +31,14 @@ export default function LoadingSpinner({ message = "Running Agentic Pipeline…"
 
       {/* Pipeline stages */}
       <div style={{ width: "100%", maxWidth: 340 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, justifyContent: "center", marginBottom: 20 }}>
-          <Sparkles size={14} style={{ color: "var(--brand-300)" }} />
-          <p style={{ fontSize: 14, fontWeight: 600, color: "var(--text-secondary)" }}>{message}</p>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, marginBottom: 20 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, justifyContent: "center" }}>
+            <Sparkles size={14} style={{ color: "var(--brand-300)" }} />
+            <p style={{ fontSize: 14, fontWeight: 600, color: "var(--text-secondary)" }}>{message}</p>
+          </div>
+          <p style={{ fontSize: 11, color: "var(--text-muted)", fontStyle: "italic" }}>
+            It takes around 8-14 seconds for this process.
+          </p>
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>

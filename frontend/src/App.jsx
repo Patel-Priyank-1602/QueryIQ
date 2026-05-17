@@ -44,12 +44,12 @@ export default function App() {
     };
   };
 
-  const handleReviewComplete = (queryId, newStatus) => {
+  const handleReviewComplete = (queryId, newStatus, updatedQuery) => {
     setQueryHistory((prev) =>
-      prev.map((q) => q.id === queryId ? { ...q, status: newStatus } : q)
+      prev.map((q) => q.id === queryId ? (updatedQuery || { ...q, status: newStatus }) : q)
     );
     if (currentResult && currentResult.id === queryId) {
-      setCurrentResult((prev) => ({ ...prev, status: newStatus }));
+      setCurrentResult((prev) => (updatedQuery || { ...prev, status: newStatus }));
     }
   };
 
@@ -592,7 +592,7 @@ function SearchPage({ onSubmit, isLoading, currentResult, error, onReviewComplet
             boxShadow: activeTab === "query" ? "var(--shadow-sm)" : "none",
           }}
         >
-          <Zap size={16} style={{ color: activeTab === "query" ? "var(--brand-400)" : "inherit" }} />
+          <img src="/newquery.png" alt="New Query" style={{ width: 25, height: 25, objectFit: "contain", filter: activeTab !== "query" ? "grayscale(100%) opacity(0.7)" : "none", transition: "all 0.2s" }} />
           New Query
         </button>
         <button
@@ -614,7 +614,7 @@ function SearchPage({ onSubmit, isLoading, currentResult, error, onReviewComplet
             boxShadow: activeTab === "result" ? "var(--shadow-sm)" : "none",
           }}
         >
-          <Sparkles size={16} style={{ color: activeTab === "result" ? "var(--accent-400)" : "inherit" }} />
+          <img src="/result.png" alt="Result" style={{ width: 25, height: 25, objectFit: "contain", filter: activeTab !== "result" ? "grayscale(100%) opacity(0.7)" : "none", transition: "all 0.2s" }} />
           Result
         </button>
       </div>

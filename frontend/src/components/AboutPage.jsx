@@ -53,7 +53,7 @@ export default function AboutPage() {
               <p className="about-body">
                 <strong style={{ color: "var(--text-primary)" }}>QueryIQ</strong> takes natural language research queries like
                 <em style={{ color: "var(--brand-300)" }}> "What companies are leading autonomous vehicle development in Europe?"</em> and
-                extracts structured intelligence — including topic, geography, industry, entity type, intent, keywords, and a confidence score.
+                extracts structured intelligence - including topic, geography, industry, entity type, intent, keywords, and a confidence score.
               </p>
               <p className="about-body" style={{ marginBottom: 0 }}>
                 All results are persisted in <strong style={{ color: "var(--text-primary)" }}>Supabase</strong> (PostgreSQL) and viewable in a sleek, responsive React dashboard.
@@ -178,8 +178,8 @@ export default function AboutPage() {
                 <div className="about-socials">
                   {[
                     { icon: <Github size={14} />, label: "GitHub", href: "https://github.com/Patel-Priyank-1602", color: "var(--text-primary)" },
-                    { icon: <Linkedin size={14} />, label: "LinkedIn", href: "https://linkedin.com/in/priyank-patel", color: "#0077b5" },
-                    { icon: <Mail size={14} />, label: "Email", href: "mailto:priyankpatel1602@gmail.com", color: "var(--error)" },
+                    { icon: <Linkedin size={14} />, label: "LinkedIn", href: "https://linkedin.com/in/patel-priyank-d", color: "#0077b5" },
+                    { icon: <Mail size={14} />, label: "Email", href: "mailto:patelpriyank2526@gmail.com", color: "var(--error)" },
                   ].map((link) => (
                     <a
                       key={link.label}

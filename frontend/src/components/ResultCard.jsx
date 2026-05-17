@@ -220,6 +220,20 @@ export default function ResultCard({ data, onReviewComplete }) {
     URL.revokeObjectURL(url);
   };
 
+  const shortJsonPayload = JSON.stringify({ id, raw_query, topic, geography, industry, entity_type, intent, keywords, confidence_score, created_at }, null, 2);
+
+  const handleShortDownload = () => {
+    const blob = new Blob([shortJsonPayload], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `queryiq-${id?.slice(0, 8)}-short.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   const handleCopy = async () => {
     await navigator.clipboard.writeText(jsonPayload);
     setCopied(true);
@@ -241,14 +255,37 @@ export default function ResultCard({ data, onReviewComplete }) {
     setEditFields(prev => ({ ...prev, keywords: prev.keywords.filter((_, i) => i !== index) }));
   };
 
+  const handleSaveEdits = async () => {
+    setReviewLoading(true);
+    try {
+      const updatedQuery = await reviewQuery(id, reviewStatus, editFields);
+      setIsEditing(false);
+      if (onReviewComplete) onReviewComplete(id, reviewStatus, updatedQuery);
+      
+      const blob = new Blob([JSON.stringify(updatedQuery, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `queryiq-${id?.slice(0, 8)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Save failed:", err);
+    } finally {
+      setReviewLoading(false);
+    }
+  };
+
   const handleReview = async (newStatus) => {
     setReviewLoading(true);
     try {
       const edits = isEditing ? editFields : {};
-      await reviewQuery(id, newStatus, edits);
+      const updatedQuery = await reviewQuery(id, newStatus, edits);
       setReviewStatus(newStatus);
       setIsEditing(false);
-      if (onReviewComplete) onReviewComplete(id, newStatus);
+      if (onReviewComplete) onReviewComplete(id, newStatus, updatedQuery);
     } catch (err) {
       console.error("Review failed:", err);
     } finally {
@@ -277,14 +314,28 @@ export default function ResultCard({ data, onReviewComplete }) {
           <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
             <StatusBadge status={reviewStatus} />
             {isPending && (
-              <button
-                className="btn btn--ghost"
-                style={{ fontSize: 11, gap: 4, padding: "4px 10px" }}
-                onClick={() => setIsEditing(!isEditing)}
-              >
-                {isEditing ? <X size={12} /> : <Edit size={12} />}
-                {isEditing ? "Cancel" : "Edit"}
-              </button>
+              <>
+                {isEditing && (
+                  <button
+                    className="btn btn--primary"
+                    style={{ fontSize: 11, gap: 4, padding: "4px 10px" }}
+                    onClick={handleSaveEdits}
+                    disabled={reviewLoading}
+                  >
+                    <Download size={12} />
+                    Save
+                  </button>
+                )}
+                <button
+                  className="btn btn--ghost"
+                  style={{ fontSize: 11, gap: 4, padding: "4px 10px" }}
+                  onClick={() => setIsEditing(!isEditing)}
+                  disabled={reviewLoading}
+                >
+                  {isEditing ? <X size={12} /> : <Edit size={12} />}
+                  {isEditing ? "Cancel" : "Edit"}
+                </button>
+              </>
             )}
           </div>
         </div>
@@ -500,8 +551,11 @@ export default function ResultCard({ data, onReviewComplete }) {
       <div className="result-card-footer" style={{ padding: "16px 28px", borderTop: "1px solid var(--border-subtle)", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
         <span style={{ fontSize: 11, fontWeight: 500, color: "var(--text-muted)" }}>{formattedDate}</span>
         <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={handleShortDownload} className="btn btn--ghost" style={{ fontSize: 12, gap: 6 }}>
+            <Download size={13} /> Short .json
+          </button>
           <button onClick={handleDownload} className="btn btn--ghost" style={{ fontSize: 12, gap: 6 }}>
-            <Download size={13} />.json
+            <Download size={13} /> Full .json
           </button>
           <button onClick={handleCopy} className="btn btn--ghost"
             style={{ fontSize: 12, gap: 6, color: copied ? "var(--success)" : undefined, borderColor: copied ? "var(--success-border)" : undefined, background: copied ? "var(--success-bg)" : undefined }}
