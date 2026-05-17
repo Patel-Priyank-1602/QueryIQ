@@ -261,16 +261,6 @@ export default function ResultCard({ data, onReviewComplete }) {
       const updatedQuery = await reviewQuery(id, reviewStatus, editFields);
       setIsEditing(false);
       if (onReviewComplete) onReviewComplete(id, reviewStatus, updatedQuery);
-      
-      const blob = new Blob([JSON.stringify(updatedQuery, null, 2)], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `queryiq-${id?.slice(0, 8)}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
     } catch (err) {
       console.error("Save failed:", err);
     } finally {
