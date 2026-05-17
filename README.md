@@ -7,7 +7,7 @@
 
 **Transforming natural language into structured, actionable data through Multi-LLM Orchestration and Autonomous Web Research.**
 
-[![Live Demo](https://img.shields.io/badge/🔴_Live_Demo-queryidsearch.netlify.app-F97316?style=for-the-badge&logo=netlify&logoColor=white)](https://queryiqsearch.netlify.app)
+[![Live Demo](https://img.shields.io/badge/🔴_Live_Demo-queryiqsearch.netlify.app-F97316?style=for-the-badge&logo=netlify&logoColor=white)](https://queryiqsearch.netlify.app)
 
 [![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![React](https://img.shields.io/badge/Frontend-React_19-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
