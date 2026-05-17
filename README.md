@@ -58,6 +58,12 @@ Unlike traditional chatbots, QueryIQ operates autonomously using a multi-step ve
 
 ## 💻 System Flow
 
+<div align="center">
+  <img src="./frontend/public/draw.png" alt="QueryIQ System Architecture and Flow" width="800" style="border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.15);" />
+</div>
+
+<br />
+
 ```mermaid
 sequenceDiagram
     participant User as 👨‍💻 User
