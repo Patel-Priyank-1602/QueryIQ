@@ -2,7 +2,7 @@
 
 <img src="./frontend/public/fav.png" alt="QueryIQ Logo" width="100" />
 
-# 🧠 QueryIQ
+# QueryIQ
 ### Production-Grade Agentic Intelligence Engine
 
 **Transforming natural language into structured, actionable data through Multi-LLM Orchestration and Autonomous Web Research.**
