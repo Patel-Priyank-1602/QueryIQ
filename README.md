@@ -98,6 +98,14 @@ When recruiters or engineers look at this codebase, they'll find:
 
 ---
 
+## ⏳ What I'd Do Differently With More Time
+
+- **Streaming Responses (SSE):** Currently, the API waits for all LLM calls to finish before returning. I would implement Server-Sent Events (SSE) to stream the pipeline steps and extracted JSON chunks to the frontend in real-time, drastically reducing perceived latency.
+- **Background Task Queue:** For extremely deep research tasks, I would offload the LLM and scraping work to a Celery or Redis Queue and return a `task_id` immediately, rather than keeping the HTTP connection open.
+- **Anthropic SDK Integration:** While I chose Groq (LLaMA 3.3) for speed and cost-effectiveness in this build, I would love to integrate the Anthropic SDK (as provided in the starter code) to utilize Claude 3.5 Sonnet for the extraction step, as it's arguably the industry leader for structured JSON extraction.
+
+---
+
 ## 🚀 Quick Start Guide
 
 Want to run this locally? It takes less than 3 minutes.
