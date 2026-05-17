@@ -95,6 +95,7 @@ When recruiters or engineers look at this codebase, they'll find:
 - **Defensive Programming:** API calls handle transient network failures, and the frontend degrades gracefully with informative Error Boundaries and Empty States.
 - **Secure Configuration:** Zero hardcoded secrets. Environment variables handle all API keys (Groq, Tavily) and Database URIs.
 - **RESTful Principles:** Predictable endpoints (`GET /queries`, `POST /queries`, `PATCH /queries/{id}/review`).
+- **Infrastructure Optimization:** Configured an automated cron-job health check (`GET /`) to bypass Render's free-tier sleep limitations, ensuring zero cold-start latency for the live demo without consuming LLM/Search API quotas.
 
 ---
 
