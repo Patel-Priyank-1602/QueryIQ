@@ -1,59 +1,109 @@
-# 🧠 Query Intelligence Engine (QueryIQ)
+<div align="center">
 
-> Transform natural language research queries into structured, actionable intelligence — powered by Groq + LLaMA 3.
+<img src="./frontend/public/fav.png" alt="QueryIQ Logo" width="100" />
 
-![Tech Stack](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)
-![React](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black)
-![Supabase](https://img.shields.io/badge/Supabase-3FCF8E?style=for-the-badge&logo=supabase&logoColor=white)
-![Groq](https://img.shields.io/badge/Groq_AI-F55036?style=for-the-badge&logo=groq&logoColor=white)
+# 🧠 QueryIQ
+### Production-Grade Agentic Intelligence Engine
 
----
+**Transforming natural language into structured, actionable data through Multi-LLM Orchestration and Autonomous Web Research.**
 
-## What It Does
+[![Live Demo](https://img.shields.io/badge/🔴_Live_Demo-queryidsearch.netlify.app-F97316?style=for-the-badge&logo=netlify&logoColor=white)](https://queryidsearch.netlify.app)
 
-QueryIQ takes **natural language research queries** like:
+[![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![React](https://img.shields.io/badge/Frontend-React_19-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
+[![Supabase](https://img.shields.io/badge/Database-Supabase-3FCF8E?style=flat-square&logo=supabase&logoColor=white)](https://supabase.com/)
+[![Groq](https://img.shields.io/badge/Inference-Groq_LLaMA_3-F55036?style=flat-square&logo=groq&logoColor=white)](https://groq.com/)
+[![Tavily](https://img.shields.io/badge/Agentic_Search-Tavily-1E40AF?style=flat-square&logo=search&logoColor=white)](https://tavily.com/)
 
-> *"What companies are leading autonomous vehicle development in Europe?"*
+<br />
 
-…and extracts structured intelligence:
+<!-- You can replace this with an actual screenshot of the app -->
+<img src="./frontend/public/bg-image.png" alt="App Preview" width="600" style="border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.2);" />
+<br />
+<i>(Click the Live Demo badge above to see it in action)</i>
 
-| Field            | Value                                  |
-|------------------|----------------------------------------|
-| **Topic**        | Autonomous Vehicle Development         |
-| **Geography**    | Europe                                 |
-| **Industry**     | Automotive / Technology                |
-| **Entity Type**  | Company                                |
-| **Intent**       | Market research / Competitive analysis |
-| **Keywords**     | autonomous vehicles, Europe, leaders   |
-| **Confidence**   | 92%                                    |
-
-All results are persisted in **Supabase** and viewable in a sleek React dashboard.
+</div>
 
 ---
 
-## Tech Stack
+## 🎯 The Vision
+Modern data research is fragmented. **QueryIQ** bridges the gap between unstructured human curiosity and structured database architecture. By employing an **Agentic AI Pipeline**, it dynamically scrapes the internet, synthesizes data via LLaMA 3.3, and strictly formats the output into a consumable JSON schema—all verified through a Human-in-the-Loop (HITL) interface.
 
-| Layer      | Technology                |
-|------------|---------------------------|
-| Frontend   | React 19 + Vite + Tailwind CSS v4 |
-| Backend    | FastAPI + Uvicorn         |
-| AI Engine  | Groq (LLaMA 3.3 70B Versatile) |
-| Database   | Supabase (PostgreSQL)     |
-| Deployment | Render (API) + Vercel (UI) |
+This is not a wrapper; it is an **intelligent orchestration engine** built for scale, speed, and accuracy.
 
 ---
 
-## Quick Start
+## ⚡ Core Architecture
 
-### Prerequisites
-- Python 3.10+
-- Node.js 18+
-- Supabase project with `queries` table (see SQL below)
-- Groq API key
+QueryIQ is built using a decoupled client-server architecture, emphasizing separation of concerns, high performance, and a seamless user experience.
 
-### Supabase Table Setup
+| 🎨 Frontend (Client) | ⚙️ Backend (API) | 🧠 AI & Infrastructure |
+| :--- | :--- | :--- |
+| **Framework:** React + Vite | **Framework:** FastAPI (Python) | **Orchestration:** Multi-agent routing |
+| **Styling:** Custom Glassmorphism CSS | **Server:** Uvicorn ASGI | **LLM Engine:** Groq (LLaMA 3.3 70B) |
+| **State:** React Hooks / Context | **Validation:** Pydantic (Strict typing) | **Web Scraping:** Tavily Search API |
+| **UX:** Dynamic Micro-animations | **Integrations:** RESTful Architecture | **Database:** Supabase (PostgreSQL) |
 
-Run this in the Supabase SQL Editor:
+---
+
+## 🤖 The Agentic Pipeline
+Unlike traditional chatbots, QueryIQ operates autonomously using a multi-step verification pipeline to prevent hallucinations.
+
+1. **Intent Classification (`Groq`):** Analyzes the raw query to determine complexity, required geography, and whether live web research is necessary.
+2. **Deep Web Scraping (`Tavily`):** If required, agents trigger live internet searches, bypassing standard LLM knowledge cut-offs.
+3. **Data Synthesis & Extraction (`Groq`):** Contextual data is fed back into the LLM with strict formatting instructions to extract precise JSON nodes (Topic, Geography, Industry, Entity Type, Intent, Keywords).
+4. **Human-in-the-Loop Verification (`Supabase`):** Extracted data is pushed to a `pending_review` database state. The UI prompts human operators to modify, approve, or reject the data before final ingestion.
+
+---
+
+## 💻 System Flow
+
+```mermaid
+sequenceDiagram
+    participant User as 👨‍💻 User
+    participant UI as 🖥️ React UI
+    participant API as ⚙️ FastAPI
+    participant AI as 🧠 Agent Workflow
+    participant DB as 🗄️ Supabase
+    
+    User->>UI: "Who leads European EV tech?"
+    UI->>API: POST /queries
+    API->>AI: 1. Classify Intent
+    AI-->>API: Needs Web Search
+    API->>AI: 2. Fetch Live Context (Tavily)
+    API->>AI: 3. Extract JSON Schema (Groq)
+    AI-->>API: Formatted Intelligence
+    API->>DB: Save as 'pending_review'
+    API-->>UI: Return Intelligence Card
+    UI-->>User: Display Glassmorphic Card
+    User->>UI: Edits data & Clicks 'Approve/Save'
+    UI->>API: PATCH /queries/{id}/review
+    API->>DB: Update row -> 'approved'
+    API-->>UI: Return updated JSON
+    UI->>User: Auto-download result.json
+```
+
+---
+
+## 🌟 Showcasing Senior-Level Practices
+
+When recruiters or engineers look at this codebase, they'll find:
+- **Strict Type Validation:** Heavy usage of `Pydantic` on the backend prevents malformed data from ever reaching the database.
+- **Optimized UI/UX:** CSS `clamp()` functions for fluid typography, custom scrollbars, and GPU-accelerated CSS animations (`transform`, `opacity`) ensure a buttery-smooth 60fps experience.
+- **Defensive Programming:** API calls handle transient network failures, and the frontend degrades gracefully with informative Error Boundaries and Empty States.
+- **Secure Configuration:** Zero hardcoded secrets. Environment variables handle all API keys (Groq, Tavily) and Database URIs.
+- **RESTful Principles:** Predictable endpoints (`GET /queries`, `POST /queries`, `PATCH /queries/{id}/review`).
+
+---
+
+## 🚀 Quick Start Guide
+
+Want to run this locally? It takes less than 3 minutes.
+
+### 1. Database Setup
+Execute this in your Supabase SQL Editor:
+<details>
+<summary><b>Click to expand SQL Schema</b></summary>
 
 ```sql
 CREATE TABLE queries (
@@ -66,115 +116,97 @@ CREATE TABLE queries (
   intent TEXT,
   keywords TEXT[] DEFAULT '{}',
   confidence_score FLOAT DEFAULT 0,
+  sources JSONB DEFAULT '[]'::jsonb,
+  pipeline_steps JSONB DEFAULT '[]'::jsonb,
+  classifier_model TEXT,
+  extractor_model TEXT,
+  research_summary TEXT,
+  status TEXT DEFAULT 'pending_review',
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
--- Enable Row Level Security (optional)
+-- Enable RLS
 ALTER TABLE queries ENABLE ROW LEVEL SECURITY;
-
--- Allow all operations for service_role
-CREATE POLICY "Allow all for service_role" ON queries
-  FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all operations" ON queries FOR ALL USING (true) WITH CHECK (true);
 ```
+</details>
 
-### Backend
-
+### 2. Backend (FastAPI)
 ```bash
 cd backend
 pip install -r requirements.txt
 
-# Create .env with your keys
-# GROQ_API_KEY=gsk_...
-# SUPABASE_URL=https://xxxxx.supabase.co
-# SUPABASE_KEY=eyJhbGciOi...
+# Environment Setup (.env)
+# GROQ_API_KEY=your_key
+# TAVILY_API_KEY=your_key
+# SUPABASE_URL=your_url
+# SUPABASE_KEY=your_key
 
 uvicorn main:app --reload
 ```
+*Swagger UI available at `http://localhost:8000/docs`*
 
-API docs: [http://localhost:8000/docs](http://localhost:8000/docs)
-
-### Frontend
-
+### 3. Frontend (React)
 ```bash
 cd frontend
 npm install
+
+# Environment Setup (.env)
+# VITE_API_URL=http://localhost:8000
+
 npm run dev
 ```
-
-App: [http://localhost:5173](http://localhost:5173)
-
----
-
-## API Endpoints
-
-| Method | Endpoint           | Description                        |
-|--------|--------------------|------------------------------------|
-| POST   | `/queries`         | Submit a query for extraction      |
-| GET    | `/queries/{id}`    | Retrieve a specific query result   |
-| GET    | `/queries`         | List 10 most recent queries        |
+*Application available at `http://localhost:5173`*
 
 ---
 
-## Project Structure
+## 📂 Comprehensive Project Structure
 
-```
+<details open>
+<summary><b>Click to collapse/expand</b></summary>
+
+```text
 QueryIQ/
-├── backend/
-│   ├── main.py           # FastAPI app + endpoints + CORS
-│   ├── llm.py            # Groq/LLaMA 3 integration + prompt engineering
-│   ├── database.py       # Supabase client + CRUD operations
-│   ├── schemas.py        # Pydantic request/response models
-│   ├── requirements.txt
-│   └── .env
-├── frontend/
-│   ├── src/
-│   │   ├── App.jsx       # Main layout + state management
-│   │   ├── api.js        # API client functions
-│   │   └── components/
-│   │       ├── QueryForm.jsx      # Input form
-│   │       ├── ResultCard.jsx     # Extraction results display
-│   │       ├── QueryHistory.jsx   # Past queries list
-│   │       └── LoadingSpinner.jsx # Loading animation
-│   ├── index.html
-│   ├── vite.config.js
-│   ├── package.json
-│   └── .env
-└── README.md
+├── backend/                              # ⚙️ FastAPI Python Server
+│   ├── main.py                           # Application entrypoint, routing, and agentic orchestration
+│   ├── multi_llm.py                      # Groq LLaMA 3.3 integration for Intent Classification & Data Extraction
+│   ├── research.py                       # Tavily Search API wrapper for autonomous deep web scraping
+│   ├── database.py                       # Supabase PostgreSQL client and CRUD operations
+│   ├── schemas.py                        # Pydantic models for strict type validation (Request/Response)
+│   ├── requirements.txt                  # Python dependency list
+│   └── .env                              # Backend environment secrets (Groq, Tavily, Supabase)
+│
+├── frontend/                             # 🎨 React 19 + Vite UI
+│   ├── public/                           # Static assets
+│   │   ├── fav.png                       # Application favicon/logo
+│   │   ├── bg-image.png                  # High-quality hero background image
+│   │   ├── newquery.png                  # Tab icon for the Query input
+│   │   └── result.png                    # Tab icon for the Results display
+│   ├── src/                              # Main frontend source code
+│   │   ├── components/                   # Modular React UI Components
+│   │   │   ├── AboutPage.jsx             # Project info, tech stack, and developer details
+│   │   │   ├── HistoryPage.jsx           # Dashboard showing previously processed and approved queries
+│   │   │   ├── Icons.jsx                 # Centralized SVG icon library for consistent UX
+│   │   │   ├── LoadingSpinner.jsx        # Animated agentic pipeline state tracker
+│   │   │   ├── QueryForm.jsx             # Textarea input component for natural language research
+│   │   │   └── ResultCard.jsx            # Complex JSON renderer with HITL editing and JSON download
+│   │   ├── api.js                        # Promise-based Fetch wrappers for API communication
+│   │   ├── App.jsx                       # Root React component, routing state, and main layout structure
+│   │   ├── index.css                     # Global styles, variables, typography, and glassmorphic utilities
+│   │   └── main.jsx                      # React DOM rendering entrypoint
+│   ├── index.html                        # HTML template
+│   ├── package.json                      # Node.js dependencies and run scripts
+│   ├── vite.config.js                    # Vite bundler configuration
+│   └── .env                              # Frontend environment secrets (API URL)
+│
+└── README.md                             # You are here!
 ```
 
----
-
-## Deployment
-
-### Backend → Render.com
-
-1. Push `backend/` to GitHub
-2. Create a **Web Service** on Render
-3. **Build command:** `pip install -r requirements.txt`
-4. **Start command:** `uvicorn main:app --host 0.0.0.0 --port 10000`
-5. Add environment variables in Render dashboard
-6. Copy the live URL
-
-### Frontend → Vercel
-
-1. Push `frontend/` to GitHub
-2. Import project on Vercel
-3. Set `VITE_API_URL` to your Render backend URL
-4. Deploy
+</details>
 
 ---
 
-## What I'd Do Differently With More Time
-
-- 🔐 Add user authentication (Supabase Auth / Clerk)
-- 🔄 Support multi-turn query refinement
-- 📊 Add export to CSV/PDF
-- 🔎 Add query similarity search with embeddings
-- 📈 Analytics dashboard for query patterns
-- 🧪 Comprehensive test suite
-
----
-
-## License
-
-MIT
+<div align="center">
+  <b>Architected and developed by <a href="https://github.com/Patel-Priyank-1602">Priyank Patel</a></b><br>
+  <i>Always building, always learning.</i>
+</div>
