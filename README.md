@@ -16,10 +16,6 @@
 [![Tavily](https://img.shields.io/badge/Agentic_Search-Tavily-1E40AF?style=flat-square&logo=search&logoColor=white)](https://tavily.com/)
 
 <br />
-
-<!-- You can replace this with an actual screenshot of the app -->
-<img src="./frontend/public/bg-image.png" alt="App Preview" width="600" style="border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.2);" />
-<br />
 <i>(Click the Live Demo badge above to see it in action)</i>
 
 </div>
