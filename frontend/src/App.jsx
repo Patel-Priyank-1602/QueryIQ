@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import QueryForm from "./components/QueryForm";
 import ResultCard from "./components/ResultCard";
 import LoadingSpinner from "./components/LoadingSpinner";
@@ -22,6 +22,30 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isAppReady, setIsAppReady] = useState(false);
+
+  // Splash screen delay
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsAppReady(true);
+    }, 1800);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Sliding pill state
+  const navRefs = useRef({});
+  const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0, opacity: 0 });
+
+  useEffect(() => {
+    const activeEl = navRefs.current[activePage];
+    if (activeEl) {
+      setIndicatorStyle({
+        left: activeEl.offsetLeft,
+        width: activeEl.offsetWidth,
+        opacity: 1,
+      });
+    }
+  }, [activePage]);
 
   // Load recent queries on mount
   useEffect(() => {
@@ -64,8 +88,32 @@ export default function App() {
     setMobileMenuOpen(false);
   };
 
+  if (!isAppReady) {
+    return (
+      <div style={{ height: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "var(--surface-0)" }}>
+        <div style={{ 
+          animation: "float 3s ease-in-out infinite", 
+          width: 120, 
+          height: 120, 
+          borderRadius: "30px", 
+          background: "#000000", 
+          display: "flex", 
+          alignItems: "center", 
+          justifyContent: "center", 
+          boxShadow: "0 12px 36px rgba(0,0,0,0.2)" 
+        }}>
+          <img src="/fav.png" alt="QueryIQ" style={{ width: 80, height: 80, animation: "spin 2s linear infinite" }} />
+        </div>
+        <h2 style={{ marginTop: 32, fontSize: 40, fontWeight: 900, color: "var(--text-primary)", letterSpacing: "-0.04em", animation: "fadeInUp 0.6s ease-out forwards" }}>QueryIQ</h2>
+        {/* <div style={{ width: 140, height: 4, background: "var(--surface-300)", borderRadius: 4, marginTop: 24, overflow: "hidden", animation: "fadeIn 1s ease-out forwards" }}>
+          <div style={{ height: "100%", background: "linear-gradient(90deg, var(--brand-400), var(--brand-600))", borderRadius: 4, animation: "widthGrow 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards" }} />
+        </div> */}
+      </div>
+    );
+  }
+
   return (
-    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", animation: "fadeIn 0.6s ease-out" }}>
       {/* ═══════════════════════════════════════════════════════
           NAVBAR
           ═══════════════════════════════════════════════════════ */}
@@ -116,35 +164,51 @@ export default function App() {
           </div>
 
           {/* ── CENTER: Desktop Navigation ── */}
-          <nav className="desktop-nav">
+          <nav className="desktop-nav" style={{ position: "relative" }}>
+            {/* Sliding Pill Indicator */}
+            <div
+              style={{
+                position: "absolute",
+                top: 6,
+                bottom: 6,
+                left: indicatorStyle.left,
+                width: indicatorStyle.width,
+                opacity: indicatorStyle.opacity,
+                borderRadius: "999px",
+                background: "linear-gradient(135deg, var(--brand-400), var(--brand-600))",
+                boxShadow: "0 6px 16px rgba(249, 115, 22, 0.35), inset 0 1px 0 rgba(255,255,255,0.2)",
+                transition: "all 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
+                zIndex: 0,
+              }}
+            />
             {NAV_ITEMS.map((item) => {
               const isActive = activePage === item.id;
               return (
                 <button
                   key={item.id}
                   id={`nav-${item.id}`}
+                  ref={(el) => (navRefs.current[item.id] = el)}
                   onClick={() => navigateTo(item.id)}
                   style={{
                     display: "flex",
                     alignItems: "center",
-                    gap: 7,
-                    padding: "8px 18px",
-                    borderRadius: "var(--radius-md)",
-                    fontSize: 13,
-                    fontWeight: isActive ? 700 : 500,
+                    gap: 8,
+                    padding: "10px 22px",
+                    borderRadius: "999px",
+                    fontSize: 14,
+                    fontWeight: isActive ? 600 : 500,
                     fontFamily: "var(--font-sans)",
                     border: "none",
                     cursor: "pointer",
-                    transition: "all 0.25s var(--ease-out)",
-                    background: isActive
-                      ? "linear-gradient(135deg, var(--brand-500), var(--brand-600))"
-                      : "transparent",
+                    position: "relative",
+                    zIndex: 1,
+                    transition: "all 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
+                    background: "transparent",
                     color: isActive ? "#fff" : "var(--text-secondary)",
-                    boxShadow: isActive ? "0 2px 10px rgba(249, 115, 22, 0.3)" : "none",
                   }}
                   onMouseEnter={(e) => {
                     if (!isActive) {
-                      e.currentTarget.style.background = "var(--surface-300)";
+                      e.currentTarget.style.background = "rgba(0,0,0,0.04)";
                       e.currentTarget.style.color = "var(--text-primary)";
                     }
                   }}
@@ -315,11 +379,14 @@ export default function App() {
         .desktop-nav {
           display: flex;
           align-items: center;
-          gap: 4px;
-          padding: 4px;
-          border-radius: var(--radius-lg);
-          background: var(--surface-200);
-          border: 1px solid var(--border-subtle);
+          gap: 6px;
+          padding: 6px;
+          border-radius: 999px;
+          background: rgba(241, 243, 248, 0.55);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
+          border: 1px solid rgba(255,255,255,0.6);
+          box-shadow: 0 4px 24px rgba(0,0,0,0.04), inset 0 0 0 1px rgba(255,255,255,0.3);
         }
         .desktop-socials {
           display: flex;
