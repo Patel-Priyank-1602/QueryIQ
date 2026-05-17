@@ -45,7 +45,7 @@ export default function App() {
         opacity: 1,
       });
     }
-  }, [activePage]);
+  }, [activePage, isAppReady]);
 
   // Load recent queries on mount
   useEffect(() => {
