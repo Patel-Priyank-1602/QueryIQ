@@ -5,9 +5,9 @@ export default function LoadingSpinner({ message = "Running Agentic Pipeline…"
   const [activeStep, setActiveStep] = useState(0);
 
   const PIPELINE_STAGES = [
-    { label: "Classifying query intent", model: "Groq LLaMA 3.3", icon: <Search size={13} />, color: "99, 102, 241" },
+    { label: "Classifying query intent", model: "Groq GPT-OSS 120B", icon: <Search size={13} />, color: "99, 102, 241" },
     { label: "Searching live internet", model: "Tavily Search API", icon: <Globe size={13} />, color: "14, 165, 233" },
-    { label: "Extracting intelligence", model: "Groq LLaMA 3.3", icon: <Sparkles size={13} />, color: "168, 85, 247" },
+    { label: "Extracting intelligence", model: "Groq GPT-OSS 120B", icon: <Sparkles size={13} />, color: "168, 85, 247" },
     { label: "Saving for review", model: "Supabase PostgreSQL", icon: <Shield size={13} />, color: "5, 150, 105" },
   ];
 

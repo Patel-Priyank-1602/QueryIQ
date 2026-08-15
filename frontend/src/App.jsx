@@ -596,7 +596,7 @@ function SearchPage({ onSubmit, isLoading, currentResult, error, onReviewComplet
           }}
         >
           <Sparkles size={14} />
-          Groq LLaMA 3.3 Powered
+          Groq GPT-OSS 120B Powered
         </div> */}
 
         <h2

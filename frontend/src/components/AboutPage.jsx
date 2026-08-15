@@ -57,7 +57,7 @@ export default function AboutPage() {
               </p>
               <p className="about-body" style={{ marginBottom: 0 }}>
                 All results are persisted in <strong style={{ color: "var(--text-primary)" }}>Supabase</strong> (PostgreSQL) and viewable in a sleek, responsive React dashboard.
-                The AI engine is powered by <strong style={{ color: "var(--text-primary)" }}>Groq</strong> running <strong style={{ color: "var(--text-primary)" }}>LLaMA 3.3 70B</strong> for fast, high-quality extraction.
+                The AI engine is powered by <strong style={{ color: "var(--text-primary)" }}>Groq</strong> running <strong style={{ color: "var(--text-primary)" }}>GPT-OSS 120B (openai/gpt-oss-120b)</strong> for fast, high-quality extraction.
               </p>
             </div>
 

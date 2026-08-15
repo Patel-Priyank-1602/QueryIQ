@@ -36,7 +36,7 @@ Research query: "{query}"
 
 def extract_query_intelligence(raw_query: str) -> dict:
     """
-    Send the raw query to Groq (LLaMA 3) and parse the structured JSON response.
+    Send the raw query to Groq (openai/gpt-oss-120b) and parse the structured JSON response.
 
     Args:
         raw_query: The natural language research query.
@@ -50,7 +50,7 @@ def extract_query_intelligence(raw_query: str) -> dict:
     """
     try:
         chat_completion = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model="openai/gpt-oss-120b",
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": USER_PROMPT_TEMPLATE.format(query=raw_query)},

@@ -1,10 +1,10 @@
 """
-Multi-LLM Orchestration Pipeline — Groq LLaMA 3.3 + Tavily Research.
+Multi-LLM Orchestration Pipeline — Groq GPT-OSS 120B + Tavily Research.
 
 Pipeline Architecture:
-  1. CLASSIFIER (Groq / LLaMA 3.3 — fast & cheap)
+  1. CLASSIFIER (Groq / openai/gpt-oss-120b — fast & powerful)
      → Classifies query intent and determines complexity
-  2. EXTRACTOR (Groq / LLaMA 3.3 — with Tavily research context)
+  2. EXTRACTOR (Groq / openai/gpt-oss-120b — with Tavily research context)
      → Reads research context + query, extracts structured JSON intelligence
 """
 
@@ -17,11 +17,11 @@ load_dotenv()
 
 # ── Model Client ──
 groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-print(f"[INIT] Groq API key: {'✅ loaded' if os.getenv('GROQ_API_KEY') else '❌ NOT SET'}")
+print(f"[INIT] Groq API key: {'[OK] loaded' if os.getenv('GROQ_API_KEY') else '[FAIL] NOT SET'}")
 
 
 # ═══════════════════════════════════════════════════════════════
-# STAGE 1: CLASSIFIER — Groq / LLaMA 3.3 (fast, cheap)
+# STAGE 1: CLASSIFIER — Groq / openai/gpt-oss-120b
 # ═══════════════════════════════════════════════════════════════
 
 CLASSIFIER_PROMPT = """You are a query classifier. Analyze the research query and return a JSON object with:
@@ -36,10 +36,10 @@ Respond in pure JSON only — no markdown, no code fences."""
 
 
 def classify_query(raw_query: str) -> dict:
-    """Stage 1: Use Groq (LLaMA 3.3) to classify the query intent."""
+    """Stage 1: Use Groq (openai/gpt-oss-120b) to classify the query intent."""
     try:
         response = groq_client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model="openai/gpt-oss-120b",
             messages=[
                 {"role": "system", "content": CLASSIFIER_PROMPT},
                 {"role": "user", "content": f'Classify this research query: "{raw_query}"'},
@@ -62,14 +62,14 @@ def classify_query(raw_query: str) -> dict:
         classification.setdefault("reasoning", "")
 
         return {
-            "model_used": "llama-3.3-70b-versatile (Groq)",
+            "model_used": "openai/gpt-oss-120b (Groq)",
             "stage": "classification",
             **classification,
         }
 
     except Exception as e:
         return {
-            "model_used": "llama-3.3-70b-versatile (Groq)",
+            "model_used": "openai/gpt-oss-120b (Groq)",
             "stage": "classification",
             "intent_category": "general_inquiry",
             "complexity": "moderate",
@@ -81,7 +81,7 @@ def classify_query(raw_query: str) -> dict:
 
 
 # ═══════════════════════════════════════════════════════════════
-# STAGE 2: EXTRACTOR — Groq / LLaMA 3.3 (with research context)
+# STAGE 2: EXTRACTOR — Groq / openai/gpt-oss-120b (with research context)
 # ═══════════════════════════════════════════════════════════════
 
 EXTRACTOR_PROMPT = """You are an advanced intelligence extraction engine. You analyze research queries along with live internet research data to extract highly accurate, real-time structured information.
@@ -133,16 +133,16 @@ Research query: "{raw_query}"
 
 def extract_intelligence(raw_query: str, research_context: str = "", sources: list = None) -> dict:
     """
-    Stage 2: Use Groq (LLaMA 3.3) to extract structured intelligence.
+    Stage 2: Use Groq (openai/gpt-oss-120b) to extract structured intelligence.
     Enhanced with Tavily research context for real-time accuracy.
     """
     try:
         prompt = build_extraction_prompt(raw_query, research_context, sources)
 
-        print(f"[EXTRACT] Calling Groq LLaMA 3.3...")
+        print(f"[EXTRACT] Calling Groq openai/gpt-oss-120b...")
 
         response = groq_client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model="openai/gpt-oss-120b",
             messages=[
                 {"role": "system", "content": EXTRACTOR_PROMPT},
                 {"role": "user", "content": prompt},
@@ -153,7 +153,7 @@ def extract_intelligence(raw_query: str, research_context: str = "", sources: li
         )
 
         text = response.choices[0].message.content.strip()
-        print(f"[EXTRACT] ✅ Success! Response length: {len(text)} chars")
+        print(f"[EXTRACT] [OK] Success! Response length: {len(text)} chars")
 
         if text.startswith("```"):
             lines = text.split("\n")
@@ -178,7 +178,7 @@ def extract_intelligence(raw_query: str, research_context: str = "", sources: li
         extracted["confidence_score"] = max(0.0, min(1.0, float(extracted["confidence_score"])))
 
         return {
-            "model_used": "llama-3.3-70b-versatile (Groq)",
+            "model_used": "openai/gpt-oss-120b (Groq)",
             "stage": "extraction",
             **extracted,
         }

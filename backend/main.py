@@ -57,9 +57,9 @@ async def root():
 async def create_query(request: QueryRequest):
     """
     Agentic AI Pipeline — Full orchestration:
-      1. CLASSIFY (Groq/LLaMA) → Determine query intent & complexity
+      1. CLASSIFY (Groq/openai/gpt-oss-120b) → Determine query intent & complexity
       2. RESEARCH (Tavily) → Search live internet for context
-      3. EXTRACT  (Gemini) → Extract structured intelligence from context
+      3. EXTRACT  (Groq/openai/gpt-oss-120b) → Extract structured intelligence from context
       4. SAVE     (Supabase) → Persist in 'pending_review' state for HITL
     """
     pipeline_steps = []
@@ -67,7 +67,7 @@ async def create_query(request: QueryRequest):
 
     try:
         # ═══════════════════════════════════════════════════════
-        # STEP 1: CLASSIFY — Groq / LLaMA 3.3 (fast & cheap)
+        # STEP 1: CLASSIFY — Groq / openai/gpt-oss-120b
         # ═══════════════════════════════════════════════════════
         step1_start = time.time()
         classification = classify_query(request.query)
@@ -76,7 +76,7 @@ async def create_query(request: QueryRequest):
         pipeline_steps.append({
             "step": 1,
             "name": "Query Classification",
-            "model": classification.get("model_used", "Groq LLaMA 3.3"),
+            "model": classification.get("model_used", "openai/gpt-oss-120b (Groq)"),
             "status": "completed",
             "duration_ms": step1_ms,
             "details": f"Intent: {classification.get('intent_category', 'N/A')} | "
@@ -114,7 +114,7 @@ async def create_query(request: QueryRequest):
         })
 
         # ═══════════════════════════════════════════════════════
-        # STEP 3: EXTRACT — Groq LLaMA 3.3 (with research context)
+        # STEP 3: EXTRACT — Groq openai/gpt-oss-120b (with research context)
         # ═══════════════════════════════════════════════════════
         step3_start = time.time()
 
@@ -123,7 +123,7 @@ async def create_query(request: QueryRequest):
             research_context=research_context,
             sources=sources,
         )
-        extractor_model = extracted.get("model_used", "Groq LLaMA 3.3")
+        extractor_model = extracted.get("model_used", "openai/gpt-oss-120b (Groq)")
 
         step3_ms = int((time.time() - step3_start) * 1000)
 
