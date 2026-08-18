@@ -1,0 +1,59 @@
+---
+# ── Celery Worker Deployment ──
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: queryiq-worker
+  namespace: queryiq
+  labels:
+    app: queryiq-worker
+    app.kubernetes.io/name: queryiq
+    app.kubernetes.io/component: worker
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: queryiq-worker
+  template:
+    metadata:
+      labels:
+        app: queryiq-worker
+    spec:
+      containers:
+        - name: worker
+          image: ghcr.io/YOUR_GITHUB_USER/queryiq-api:latest
+          command: ["celery"]
+          args:
+            - "-A"
+            - "celery_app"
+            - "worker"
+            - "--loglevel=info"
+            - "--concurrency=2"
+            - "-Q"
+            - "default"
+          envFrom:
+            - configMapRef:
+                name: queryiq-config
+            - secretRef:
+                name: queryiq-secrets
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          # Workers don't serve HTTP — use exec-based probes
+          livenessProbe:
+            exec:
+              command:
+                - "celery"
+                - "-A"
+                - "celery_app"
+                - "inspect"
+                - "ping"
+                - "--timeout"
+                - "5"
+            initialDelaySeconds: 30
+            periodSeconds: 60
+            timeoutSeconds: 10

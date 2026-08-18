@@ -1,12 +1,28 @@
 """
 FastAPI application — Agentic AI pipeline with Deep Research,
 Multi-LLM Orchestration, and Human-in-the-Loop review endpoints.
+
+Enhanced with:
+  - Celery async pipeline (POST /queries returns task_id instantly)
+  - Server-Sent Events for real-time progress (GET /queries/{id}/stream)
+  - Redis caching for Tavily and Groq calls
+  - Prometheus instrumentation (/metrics)
+  - Sentry error tracking
 """
 
+import os
+import sys
 import uuid
 import time
+import json
+import logging
+
+# Ensure module directory is in Python path
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 
 from schemas import (
     QueryRequest, QueryResponse, ExtractedData,
@@ -17,6 +33,36 @@ from multi_llm import classify_query, extract_intelligence
 from database import (
     insert_query, get_query_by_id, get_recent_queries, update_query_status,
 )
+try:
+    from metrics import (
+        record_stage_duration, record_cache_hit, record_cache_miss,
+        record_pipeline_success, record_pipeline_error
+    )
+except ImportError:
+    def record_stage_duration(s, d): pass
+    def record_cache_hit(n): pass
+    def record_cache_miss(n): pass
+    def record_pipeline_success(): pass
+    def record_pipeline_error(): pass
+
+logger = logging.getLogger("queryiq")
+
+# ── Sentry Initialization (optional, gracefully degrades) ──
+try:
+    import sentry_sdk
+    SENTRY_DSN = os.getenv("SENTRY_DSN", "")
+    if SENTRY_DSN:
+        sentry_sdk.init(
+            dsn=SENTRY_DSN,
+            traces_sample_rate=0.2,
+            profiles_sample_rate=0.1,
+            environment=os.getenv("ENVIRONMENT", "development"),
+        )
+        logger.info("[SENTRY] Initialized successfully")
+    else:
+        logger.info("[SENTRY] No DSN configured, skipping")
+except ImportError:
+    logger.info("[SENTRY] sentry-sdk not installed, skipping")
 
 app = FastAPI(
     title="QueryIQ — Agentic Intelligence Engine",
@@ -25,7 +71,7 @@ app = FastAPI(
         "multi-LLM orchestration (Groq + Gemini), and human-in-the-loop "
         "review for structured intelligence extraction."
     ),
-    version="2.0.0",
+    version="2.1.0",
 )
 
 # CORS — allow all origins so the React frontend can call the API
@@ -37,29 +83,119 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ── Prometheus Instrumentation (optional, gracefully degrades) ──
+try:
+    from prometheus_fastapi_instrumentator import Instrumentator
+    instrumentator = Instrumentator(
+        should_group_status_codes=True,
+        should_ignore_untemplated=True,
+        excluded_handlers=["/metrics", "/health"],
+    )
+    instrumentator.instrument(app).expose(app, endpoint="/metrics")
+    logger.info("[PROMETHEUS] FastAPI instrumentation enabled at /metrics")
+except ImportError:
+    logger.info("[PROMETHEUS] prometheus-fastapi-instrumentator not installed, skipping")
+
+
+# ── Celery availability check ──
+def _celery_available() -> bool:
+    """Check if Celery + Redis broker is available."""
+    try:
+        from celery_app import celery_app
+        celery_app.connection().ensure_connection(max_retries=1, timeout=2)
+        return True
+    except Exception:
+        return False
+
+
+ASYNC_MODE = os.getenv("ASYNC_PIPELINE", "auto")  # "auto", "true", "false"
+
 
 @app.get("/", tags=["Health"])
 async def root():
     """Health check endpoint."""
+    async_status = "enabled" if ASYNC_MODE == "true" or (ASYNC_MODE == "auto" and _celery_available()) else "disabled"
     return {
         "status": "online",
         "service": "QueryIQ — Agentic Intelligence Engine",
-        "version": "2.0.0",
+        "version": "2.1.0",
+        "async_pipeline": async_status,
         "features": [
             "Deep Research (Tavily)",
             "Multi-LLM Orchestration (Groq + Gemini)",
             "Human-in-the-Loop Reviews",
+            "Async Pipeline (Celery + Redis)",
+            "Real-Time SSE Progress",
+            "Redis Caching",
+            "Prometheus Metrics",
         ],
     }
 
 
-@app.post("/queries", response_model=QueryResponse, tags=["Queries"])
+# ═══════════════════════════════════════════════════════════════
+# QUERY SUBMISSION — Async (Celery) or Sync (fallback)
+# ═══════════════════════════════════════════════════════════════
+
+@app.post("/queries", response_model=None, tags=["Queries"])
 async def create_query(request: QueryRequest):
     """
-    Agentic AI Pipeline — Full orchestration:
-      1. CLASSIFY (Groq/openai/gpt-oss-120b) → Determine query intent & complexity
+    Submit a research query for processing.
+
+    In ASYNC mode (Celery available):
+      - Returns 202 with query_id immediately
+      - Pipeline runs in background via Celery workers
+      - Use GET /queries/{query_id}/stream for real-time SSE progress
+      - Use GET /queries/{query_id}/status for polling
+
+    In SYNC mode (fallback):
+      - Runs the full pipeline synchronously
+      - Returns the complete QueryResponse
+    """
+    use_async = False
+    if ASYNC_MODE == "true":
+        use_async = True
+    elif ASYNC_MODE == "auto":
+        use_async = _celery_available()
+
+    if use_async:
+        return await _create_query_async(request)
+    else:
+        return await _create_query_sync(request)
+
+
+async def _create_query_async(request: QueryRequest):
+    """Async pipeline: enqueue to Celery and return immediately."""
+    query_id = str(uuid.uuid4())
+
+    try:
+        from tasks import run_pipeline_async
+        async_result = run_pipeline_async(query_id, request.query)
+        record_pipeline_success()
+
+        return {
+            "id": query_id,
+            "task_id": async_result.id,
+            "status": "processing",
+            "raw_query": request.query,
+            "message": "Query submitted for async processing. Use the stream or status endpoint to track progress.",
+            "endpoints": {
+                "stream": f"/queries/{query_id}/stream",
+                "status": f"/queries/{query_id}/status",
+                "result": f"/queries/{query_id}",
+            },
+        }
+    except Exception as e:
+        record_pipeline_error()
+        logger.warning(f"[ASYNC] Celery enqueue failed, falling back to sync: {e}")
+        return await _create_query_sync(request)
+
+
+async def _create_query_sync(request: QueryRequest):
+    """
+    Synchronous pipeline — Full orchestration (original behavior):
+      1. CLASSIFY (Groq) → Determine query intent & complexity
       2. RESEARCH (Tavily) → Search live internet for context
-      3. EXTRACT  (Groq/openai/gpt-oss-120b) → Extract structured intelligence from context
+      3. EXTRACT  (Groq) → Extract structured intelligence from context
       4. SAVE     (Supabase) → Persist in 'pending_review' state for HITL
     """
     pipeline_steps = []
@@ -217,6 +353,61 @@ async def create_query(request: QueryRequest):
 
 
 # ═══════════════════════════════════════════════════════════════
+# QUERY STATUS — Polling endpoint for async pipeline
+# ═══════════════════════════════════════════════════════════════
+
+@app.get("/queries/{query_id}/status", tags=["Queries"])
+async def get_query_status(query_id: str):
+    """
+    Check the current status of an async pipeline query.
+    Returns processing state and result when complete.
+    """
+    row = get_query_by_id(query_id)
+
+    if row is None:
+        return {
+            "id": query_id,
+            "status": "processing",
+            "message": "Query is still being processed by the pipeline.",
+        }
+
+    return {
+        "id": query_id,
+        "status": row.get("status", "unknown"),
+        "message": "Query processing complete." if row.get("status") != "processing" else "Still processing...",
+        "result_url": f"/queries/{query_id}",
+    }
+
+
+# ═══════════════════════════════════════════════════════════════
+# SSE STREAM — Real-time pipeline progress
+# ═══════════════════════════════════════════════════════════════
+
+@app.get("/queries/{query_id}/stream", tags=["Queries"])
+async def stream_query_progress(query_id: str):
+    """
+    Server-Sent Events endpoint for real-time pipeline progress.
+    Streams stage updates as they happen via Redis Pub/Sub.
+
+    Usage: EventSource(`/queries/{query_id}/stream`)
+    Events: { stage, status, details, duration_ms, result? }
+    """
+    try:
+        from sse import stream_query_events
+        return StreamingResponse(
+            stream_query_events(query_id),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "X-Accel-Buffering": "no",
+            },
+        )
+    except ImportError:
+        raise HTTPException(status_code=501, detail="SSE streaming requires Redis")
+
+
+# ═══════════════════════════════════════════════════════════════
 # HUMAN-IN-THE-LOOP: Review Endpoints
 # ═══════════════════════════════════════════════════════════════
 
@@ -284,7 +475,6 @@ def _row_to_response(row: dict) -> QueryResponse:
     # Parse sources
     raw_sources = row.get("sources", [])
     if isinstance(raw_sources, str):
-        import json
         try:
             raw_sources = json.loads(raw_sources)
         except:
@@ -302,7 +492,6 @@ def _row_to_response(row: dict) -> QueryResponse:
     # Parse pipeline steps
     raw_steps = row.get("pipeline_steps", [])
     if isinstance(raw_steps, str):
-        import json
         try:
             raw_steps = json.loads(raw_steps)
         except:

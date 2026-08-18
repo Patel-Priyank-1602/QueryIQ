@@ -1,22 +1,98 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Sparkles, Search, Globe, Shield } from "./Icons";
+import { streamQueryProgress } from "../api";
 
-export default function LoadingSpinner({ message = "Running Agentic Pipeline…" }) {
+const PIPELINE_STAGES = [
+  { key: "classify", label: "Classifying query intent", model: "Groq GPT-OSS 120B", icon: <Search size={13} />, color: "99, 102, 241" },
+  { key: "research", label: "Searching live internet", model: "Tavily Search API", icon: <Globe size={13} />, color: "14, 165, 233" },
+  { key: "extract", label: "Extracting intelligence", model: "Groq GPT-OSS 120B", icon: <Sparkles size={13} />, color: "168, 85, 247" },
+  { key: "save", label: "Saving for review", model: "Supabase PostgreSQL", icon: <Shield size={13} />, color: "5, 150, 105" },
+];
+
+/**
+ * LoadingSpinner — Displays real-time pipeline progress.
+ *
+ * In SSE mode (queryId provided):
+ *   Connects to the SSE stream and shows actual stage progress.
+ *
+ * In static mode (no queryId):
+ *   Simulates stage progression with timers (original behavior).
+ */
+export default function LoadingSpinner({
+  message = "Running Agentic Pipeline…",
+  queryId = null,
+  onPipelineComplete = null,
+  onPipelineError = null,
+}) {
   const [activeStep, setActiveStep] = useState(0);
+  const [stageDetails, setStageDetails] = useState({});
+  const [isSSEConnected, setIsSSEConnected] = useState(false);
+  const cleanupRef = useRef(null);
 
-  const PIPELINE_STAGES = [
-    { label: "Classifying query intent", model: "Groq GPT-OSS 120B", icon: <Search size={13} />, color: "99, 102, 241" },
-    { label: "Searching live internet", model: "Tavily Search API", icon: <Globe size={13} />, color: "14, 165, 233" },
-    { label: "Extracting intelligence", model: "Groq GPT-OSS 120B", icon: <Sparkles size={13} />, color: "168, 85, 247" },
-    { label: "Saving for review", model: "Supabase PostgreSQL", icon: <Shield size={13} />, color: "5, 150, 105" },
-  ];
-
+  // ── SSE Mode: Connect to real-time stream ──
   useEffect(() => {
+    if (!queryId) return;
+
+    let cancelled = false;
+
+    try {
+      const cleanup = streamQueryProgress(
+        queryId,
+        // onStageUpdate
+        (event) => {
+          if (cancelled) return;
+          setIsSSEConnected(true);
+
+          const stageIndex = PIPELINE_STAGES.findIndex(s => s.key === event.stage);
+          if (stageIndex >= 0) {
+            if (event.status === "started") {
+              setActiveStep(stageIndex);
+            } else if (event.status === "completed") {
+              setActiveStep(stageIndex + 1);
+              setStageDetails(prev => ({
+                ...prev,
+                [event.stage]: {
+                  details: event.details || "",
+                  duration_ms: event.duration_ms || 0,
+                  completed: true,
+                },
+              }));
+            }
+          }
+        },
+        // onComplete
+        (result) => {
+          if (cancelled) return;
+          setActiveStep(PIPELINE_STAGES.length);
+          if (onPipelineComplete) onPipelineComplete(result);
+        },
+        // onError
+        (errorMsg) => {
+          if (cancelled) return;
+          if (onPipelineError) onPipelineError(errorMsg);
+        }
+      );
+
+      cleanupRef.current = cleanup;
+    } catch (e) {
+      console.warn("[LoadingSpinner] SSE connection failed:", e);
+    }
+
+    return () => {
+      cancelled = true;
+      if (cleanupRef.current) cleanupRef.current();
+    };
+  }, [queryId]);
+
+  // ── Static Mode: Simulated timer (fallback when no queryId) ──
+  useEffect(() => {
+    if (queryId) return; // Skip if SSE mode
+
     const interval = setInterval(() => {
       setActiveStep((prev) => (prev < PIPELINE_STAGES.length - 1 ? prev + 1 : prev));
     }, 2200);
     return () => clearInterval(interval);
-  }, [PIPELINE_STAGES.length]);
+  }, [queryId]);
 
   return (
     <div className="animate-fade-in" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 28, padding: "32px 0" }}>
@@ -37,7 +113,7 @@ export default function LoadingSpinner({ message = "Running Agentic Pipeline…"
             <p style={{ fontSize: 14, fontWeight: 600, color: "var(--text-secondary)" }}>{message}</p>
           </div>
           <p style={{ fontSize: 11, color: "var(--text-muted)", fontStyle: "italic" }}>
-            It takes around 8-14 seconds for this process.
+            {isSSEConnected ? "Connected — receiving live updates" : "It takes around 8-14 seconds for this process."}
           </p>
         </div>
 
@@ -47,6 +123,7 @@ export default function LoadingSpinner({ message = "Running Agentic Pipeline…"
             const isDone = i < activeStep;
             const isPending = i > activeStep;
             const rgb = stage.color;
+            const details = stageDetails[stage.key];
             return (
               <div key={i} style={{
                 display: "flex", alignItems: "center", gap: 12,
@@ -69,8 +146,16 @@ export default function LoadingSpinner({ message = "Running Agentic Pipeline…"
                     {stage.label}
                   </p>
                   <p style={{ fontSize: 10, fontFamily: "var(--font-mono)", color: "var(--text-muted)", marginTop: 1 }}>
-                    {stage.model}
+                    {details?.completed && details.duration_ms
+                      ? `${stage.model} · ${details.duration_ms}ms`
+                      : stage.model
+                    }
                   </p>
+                  {details?.details && isDone && (
+                    <p style={{ fontSize: 10, color: `rgb(${rgb})`, marginTop: 2, opacity: 0.8 }}>
+                      {details.details}
+                    </p>
+                  )}
                 </div>
                 {isActive && (
                   <div style={{ width: 14, height: 14, borderRadius: "50%", border: "2px solid transparent", borderTopColor: `rgb(${rgb})`, animation: "spin 0.6s linear infinite" }} />

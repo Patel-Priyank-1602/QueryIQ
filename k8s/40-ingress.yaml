@@ -1,0 +1,36 @@
+---
+# ── Ingress for QueryIQ API ──
+# Compatible with both Traefik (k3s default) and nginx-ingress
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: queryiq-ingress
+  namespace: queryiq
+  labels:
+    app.kubernetes.io/name: queryiq
+  annotations:
+    # Traefik annotations (k3s default ingress controller)
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+    # Nginx ingress annotations (if using nginx instead)
+    # nginx.ingress.kubernetes.io/proxy-read-timeout: "120"
+    # nginx.ingress.kubernetes.io/proxy-send-timeout: "120"
+    # nginx.ingress.kubernetes.io/proxy-buffering: "off"
+    # Enable SSE support
+    traefik.ingress.kubernetes.io/buffering-maxresponsebodybytes: "0"
+spec:
+  rules:
+    - host: queryiq.local  # Change to your domain
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: queryiq-api-service
+                port:
+                  number: 8000
+  # Uncomment for TLS
+  # tls:
+  #   - hosts:
+  #       - queryiq.local
+  #     secretName: queryiq-tls

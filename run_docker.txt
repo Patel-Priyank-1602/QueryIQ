@@ -1,0 +1,12 @@
+$env:Path += ";$env:LOCALAPPDATA\Programs\DockerDesktop\resources\bin"
+
+$dockerPath = "$env:LOCALAPPDATA\Programs\DockerDesktop\resources\bin"
+[Environment]::SetEnvironmentVariable("Path", "$([Environment]::GetEnvironmentVariable("Path", "User"));$dockerPath", "User")
+$env:Path = [Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [Environment]::GetEnvironmentVariable("Path", "User")
+
+docker --version
+
+docker compose version
+
+cd D:\Project\QueryIQ
+docker compose up --build -d

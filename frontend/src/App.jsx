@@ -1,12 +1,24 @@
 import { useState, useEffect, useRef } from "react";
+import { QueryClient, QueryClientProvider, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import QueryForm from "./components/QueryForm";
 import ResultCard from "./components/ResultCard";
 import LoadingSpinner from "./components/LoadingSpinner";
 import HistoryPage from "./components/HistoryPage";
 import AboutPage from "./components/AboutPage";
 import ContactPage from "./components/ContactPage";
-import { submitQuery, getRecentQueries } from "./api";
+import { submitQuery, getRecentQueries, getQuery } from "./api";
 import { Zap, Search, Clock, Info, MessageSquare, Github, Sparkles, Mail, Activity } from "./components/Icons";
+
+// ── TanStack Query Client ──
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30_000, // 30 seconds
+      refetchOnWindowFocus: false,
+      retry: 2,
+    },
+  },
+});
 
 const NAV_ITEMS = [
   { id: "search", label: "Search", icon: <Search size={15} /> },
@@ -15,11 +27,12 @@ const NAV_ITEMS = [
   { id: "contact", label: "Contact", icon: <MessageSquare size={15} /> },
 ];
 
-export default function App() {
+function AppContent() {
   const [activePage, setActivePage] = useState("search");
   const [currentResult, setCurrentResult] = useState(null);
   const [queryHistory, setQueryHistory] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [asyncQueryId, setAsyncQueryId] = useState(null);
   const [error, setError] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isAppReady, setIsAppReady] = useState(false);
@@ -47,25 +60,54 @@ export default function App() {
     }
   }, [activePage, isAppReady]);
 
-  // Load recent queries on mount
+  // Load recent queries via TanStack Query
+  const tqClient = useQueryClient();
+  const { data: historyData } = useQuery({
+    queryKey: ["recentQueries"],
+    queryFn: getRecentQueries,
+  });
+
   useEffect(() => {
-    getRecentQueries()
-      .then(setQueryHistory)
-      .catch(() => {});
-  }, []);
+    if (historyData) setQueryHistory(historyData);
+  }, [historyData]);
 
   const handleSubmit = async (queryText) => {
     setIsLoading(true);
     setError("");
+    setAsyncQueryId(null);
     try {
       const result = await submitQuery(queryText);
-      setCurrentResult(result);
-      setQueryHistory((prev) => [result, ...prev].slice(0, 10));
+
+      // Check if this is an async response (has task_id, status=processing)
+      if (result.status === "processing" && result.id) {
+        // Async mode — show SSE-connected spinner
+        setAsyncQueryId(result.id);
+      } else {
+        // Sync mode — result is complete
+        setCurrentResult(result);
+        setQueryHistory((prev) => [result, ...prev].slice(0, 10));
+        tqClient.invalidateQueries({ queryKey: ["recentQueries"] });
+        setIsLoading(false);
+      }
     } catch (err) {
       setError(err.message || "Something went wrong");
-    } finally {
       setIsLoading(false);
-    };
+    }
+  };
+
+  // Handle async pipeline completion (via SSE or polling)
+  const handlePipelineComplete = (result) => {
+    setCurrentResult(result);
+    setQueryHistory((prev) => [result, ...prev].slice(0, 10));
+    tqClient.invalidateQueries({ queryKey: ["recentQueries"] });
+    setIsLoading(false);
+    setAsyncQueryId(null);
+  };
+
+  const handlePipelineError = (errorMsg) => {
+    setError(errorMsg || "Pipeline processing failed");
+    setIsLoading(false);
+    setAsyncQueryId(null);
   };
 
   const handleReviewComplete = (queryId, newStatus, updatedQuery) => {
@@ -318,6 +360,9 @@ export default function App() {
             currentResult={currentResult}
             error={error}
             onReviewComplete={handleReviewComplete}
+            asyncQueryId={asyncQueryId}
+            onPipelineComplete={handlePipelineComplete}
+            onPipelineError={handlePipelineError}
           />
         )}
         {activePage === "history" && (
@@ -530,7 +575,16 @@ export default function App() {
 /* ═══════════════════════════════════════════════════════
    SEARCH PAGE — Single Column with Tabs
    ═══════════════════════════════════════════════════════ */
-function SearchPage({ onSubmit, isLoading, currentResult, error, onReviewComplete }) {
+function SearchPage({
+  onSubmit,
+  isLoading,
+  currentResult,
+  error,
+  onReviewComplete,
+  asyncQueryId,
+  onPipelineComplete,
+  onPipelineError,
+}) {
   const [activeTab, setActiveTab] = useState("query"); // "query" | "result"
 
   useEffect(() => {
@@ -742,7 +796,11 @@ function SearchPage({ onSubmit, isLoading, currentResult, error, onReviewComplet
                     justifyContent: "center",
                   }}
                 >
-                  <LoadingSpinner />
+                  <LoadingSpinner
+                    queryId={asyncQueryId}
+                    onPipelineComplete={onPipelineComplete}
+                    onPipelineError={onPipelineError}
+                  />
                 </div>
               ) : currentResult ? (
                 <ResultCard data={currentResult} onReviewComplete={onReviewComplete} />
@@ -864,5 +922,14 @@ function EmptyState({ onSwitchToQuery }) {
         <Zap size={14} /> Write a Query
       </button>
     </div>
+  );
+}
+
+// ── Root App Component with QueryClientProvider ──
+export default function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AppContent />
+    </QueryClientProvider>
   );
 }

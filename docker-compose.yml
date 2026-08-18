@@ -1,0 +1,96 @@
+# ═══════════════════════════════════════════════════════════════
+# QueryIQ — Docker Compose (Dev + Production)
+# Services: Redis, FastAPI API, Celery Worker, React Frontend
+# ═══════════════════════════════════════════════════════════════
+
+services:
+  # ── Redis — Message Broker, Result Backend, Cache, Pub/Sub ──
+  redis:
+    image: redis:7-alpine
+    container_name: queryiq-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - queryiq-net
+
+  # ── FastAPI Backend API ──
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: queryiq-api
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./backend/.env
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/')"]
+      interval: 30s
+      timeout: 10s
+      start_period: 10s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - queryiq-net
+
+  # ── Celery Worker (Background Pipeline Tasks) ──
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: queryiq-worker
+    command: celery -A celery_app worker --loglevel=info --concurrency=2 -Q default
+    env_file:
+      - ./backend/.env
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+    depends_on:
+      redis:
+        condition: service_healthy
+      backend:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - queryiq-net
+
+  # ── React Frontend (Nginx) ──
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:8000
+    container_name: queryiq-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - queryiq-net
+
+volumes:
+  redis_data:
+    driver: local
+
+networks:
+  queryiq-net:
+    driver: bridge
