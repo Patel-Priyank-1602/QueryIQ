@@ -26,6 +26,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
 
 # Copy application code
 COPY . .
+RUN chmod +x start.sh
 
 # Switch to non-root user
 USER appuser
@@ -37,5 +38,5 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/')" || exit 1
 
-# Run Celery worker in background and uvicorn in foreground
-CMD ["sh", "-c", "celery -A celery_app worker --loglevel=info --concurrency=1 -Q default & exec uvicorn main:app --host 0.0.0.0 --port 8000"]
+# Run entrypoint script
+CMD ["./start.sh"]
