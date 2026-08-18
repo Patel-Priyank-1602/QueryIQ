@@ -2,17 +2,27 @@
 # Scrapes FastAPI /metrics endpoint
 
 global:
-  scrape_interval: 15s
-  evaluation_interval: 15s
+  scrape_interval: 30s
+  scrape_timeout: 25s
+  evaluation_interval: 30s
 
 scrape_configs:
-  - job_name: "queryiq-api"
+  - job_name: "queryiq-api-local"
     metrics_path: /metrics
     static_configs:
       - targets: ["backend:8000"]
         labels:
           service: "queryiq-api"
-          environment: "development"
+          environment: "local"
+
+  - job_name: "queryiq-production-cloud"
+    metrics_path: /metrics
+    scheme: https
+    static_configs:
+      - targets: ["pqueryiq-api.onrender.com:443"]
+        labels:
+          service: "queryiq-api"
+          environment: "production-cloud"
 
   - job_name: "prometheus"
     static_configs:
