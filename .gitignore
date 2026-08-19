@@ -19,3 +19,6 @@ build/
 # OS
 .DS_Store
 Thumbs.db
+
+# Local run scripts / notes
+run_docker.txt
